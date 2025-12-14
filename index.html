@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
     <title>Causality Studios</title>
     <style>
         /* IMPORT RETRO FONT */
@@ -25,8 +25,6 @@
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
         }
 
-
-
         .parallax-layer {
             position: absolute;
             top: 0;
@@ -39,7 +37,7 @@
         .mountains {
             background-image: url('images/mountain.png');
             background-position: bottom left;
-            background-size: auto 30%; /* Adjust size as needed */
+            background-size: auto 30%; /* Desktop size */
             animation: scroll 60s linear infinite;
             z-index: 2;
         }
@@ -47,25 +45,28 @@
         /* --- CLOUDS --- */
         .cloud {
             position: absolute;
-            background-image: url('images/cloud.png'); /* YOUR CLOUD FILE */
+            background-image: url('images/cloud.png'); 
             background-repeat: no-repeat;
             background-size: contain;
-            z-index: 1; /* Behind mountains */
+            z-index: 1; 
             opacity: 1;
-            
-            /* CRITICAL: This makes the black background of the JPG transparent */
             mix-blend-mode: screen; 
         }
 
         @keyframes floatCloud {
-            from { transform: translateX(110vw); } /* Start off-screen right */
-            to { transform: translateX(-20vw); }   /* End off-screen left */
+            from { transform: translateX(110vw); } 
+            to { transform: translateX(-50vw); }   /* Extended end point for safety */
+        }
+
+        @keyframes scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
         }
 
         /* --- TEXT CONTENT --- */
         .content {
             position: relative;
-            z-index: 10; /* On top of everything */
+            z-index: 10; 
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -74,6 +75,7 @@
             text-align: center;
             color: white;
             text-shadow: 4px 4px 0 #000;
+            padding: 0 10px; /* Safety padding */
         }
 
         h1 {
@@ -88,6 +90,8 @@
             background: rgba(0, 0, 0, 0.6);
             box-shadow: 8px 8px 0 rgba(0,0,0,0.5);
             max-width: 600px;
+            width: 100%; /* Ensure it adapts */
+            box-sizing: border-box; /* Keeps padding inside width */
         }
 
         .btn {
@@ -103,16 +107,37 @@
             opacity: 0.7;
         }
 
+        /* --- MOBILE OPTIMIZATION --- */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem; /* Smaller font for mobile to fit screen */
+                line-height: 1.4;
+                margin-bottom: 15px;
+            }
+
+            .pixel-box {
+                width: 90%; /* Take up more width on phones */
+                padding: 15px;
+            }
+
+            p {
+                font-size: 0.8rem; /* Slightly smaller text */
+                line-height: 1.5;
+            }
+
+            .mountains {
+                /* In portrait, 30% height is too tall, adjust to look proportional */
+                background-size: auto 20%; 
+            }
+        }
     </style>
 </head>
 <body>
 
     <div id="sky-container"></div>
 
-
-        <div class="parallax-layer mountains"></div>
+    <div class="parallax-layer mountains"></div>
  
-
     <div class="content">
         <h1>CAUSALITY<br>STUDIOS</h1>
         <div class="pixel-box">
@@ -125,7 +150,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const sky = document.getElementById('sky-container');
-            const cloudCount = 15; // Number of clouds to generate
+            const cloudCount = 15; 
 
             for (let i = 0; i < cloudCount; i++) {
                 createCloud(sky);
@@ -136,52 +161,37 @@
             const cloud = document.createElement('div');
             cloud.classList.add('cloud');
 
-            // 1. Vertical Position (0% is top, 60% is near horizon/mountains)
-            // We limit to 60% so clouds don't go OVER the mountains too much
+            // Detect if Mobile
+            const isMobile = window.innerWidth < 768;
+
+            // 1. Vertical Position 
             const topPos = Math.random() * 60; 
             
-            // 2. Size Logic: 
-            // If topPos is 0 (high in sky) -> Scale is 1.0 (Big)
-            // If topPos is 60 (horizon) -> Scale is 0.4 (Small)
+            // 2. Scale Logic
             const scale = 1 - (topPos / 100); 
 
-            // 3. Blur Logic:
-            // High in sky -> Blur 0px
-            // Horizon -> Blur 2px
+            // 3. Blur Logic
             const blur = (topPos / 30); 
 
-            // 4. Speed Logic (Parallax):
-            // Big clouds (close) move fast (e.g., 20s)
-            // Small clouds (far) move slow (e.g., 60s)
-            const duration = 20 + (topPos * 1.5); // Randomize slightly
-
-            // 5. Randomize Delay so they don't all start at once
-            const delay = Math.random() * -60; // Negative delay starts animation mid-way
+            // 4. Speed Logic
+            const duration = 20 + (topPos * 1.5); 
+            const delay = Math.random() * -60; 
 
             // Apply Styles
             cloud.style.top = topPos + '%';
-            cloud.style.width = '300px'; // Base width, scale handles the rest
-            cloud.style.height = '150px';
             
-            // We use a wrapper transform for the scale to avoid conflicting with the animation translate
-            // But to keep it simple pure JS, we can set width/height or zoom, 
-            // OR simply adjust the animation speed and opacity.
-            // Let's use 'filter' for blur and 'transform' for scale.
+            // --- MOBILE ADJUSTMENT FOR JS ---
+            // If mobile, use smaller base width so clouds don't dominate the screen
+            const baseWidth = isMobile ? 150 : 250;
+            const baseHeight = isMobile ? 75 : 125;
             
-            // Note: Since animation uses transform, setting transform here might get overridden.
-            // To fix this, we apply the scale to the size directly or use a wrapper.
-            // EASIEST FIX: Change width/height directly based on scale.
-            const baseWidth = 250;
-            const baseHeight = 125;
             cloud.style.width = (baseWidth * scale) + 'px';
             cloud.style.height = (baseHeight * scale) + 'px';
 
             cloud.style.filter = `blur(${blur}px)`;
             
-            // Random Opacity to add texture
             cloud.style.opacity = 0.6 + (Math.random() * 0.4);
 
-            // Animation
             cloud.style.animation = `floatCloud ${duration}s linear infinite`;
             cloud.style.animationDelay = `${delay}s`;
 
